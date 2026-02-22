@@ -97,32 +97,95 @@ const calculateCVaR = (asset) => {
 };
 
 /**
+ * Calculates covariance between two return series
+ */
+const calculateCovariance = (returnsA, returnsB) => {
+    const n = Math.min(returnsA.length, returnsB.length);
+    if (n < 2) return 0;
+
+    const meanA = returnsA.slice(0, n).reduce((a, b) => a + b) / n;
+    const meanB = returnsB.slice(0, n).reduce((a, b) => a + b) / n;
+
+    let covariance = 0;
+    for (let i = 0; i < n; i++) {
+        covariance += (returnsA[i] - meanA) * (returnsB[i] - meanB);
+    }
+    return covariance / (n - 1);
+};
+
+/**
  * Calculates total portfolio risk
- * NOTE: Currently assumes asset independence (Total Risk = Sum of individual risks).
- * In a professional engine, this would use a Covariance Matrix for correlations.
+ * Now uses Covariance Matrix for correlated assets
  */
 const calculatePortfolioRisk = (assets, strategy = 'VAR') => {
-    const assetRisks = assets.map(asset => {
+    // 1. Calculate individual risks and return series
+    const assetsData = assets.map(asset => {
+        const returns = calculateDailyReturns(asset.priceHistory);
+        const marketValue = calculateMarketValue(asset);
         const risk = strategy === 'VAR' ? calculateVaR(asset) : calculateCVaR(asset);
+
         return {
             assetId: asset._id,
             name: asset.name,
-            risk: risk
+            returns,
+            marketValue,
+            risk
         };
     });
 
-    const totalRisk = assetRisks.reduce((sum, item) => sum + item.risk, 0);
+    let totalRisk = 0;
 
-    // Calculate contribution percentages
-    const assetsWithContribution = assetRisks.map(item => ({
-        ...item,
-        contributionPercentage: totalRisk > 0 ? (item.risk / totalRisk) * 100 : 0
+    if (strategy === 'VAR' && assets.length > 1) {
+        /**
+         * PORTFOLIO VaR WITH COVARIANCE MATRIX
+         * Formula: VaR_p = 1.65 * sqrt(V^T * Cov * V) * sqrt(252)
+         * Where V is the vector of dollar exposures
+         */
+        let portfolioVariance = 0;
+
+        for (let i = 0; i < assetsData.length; i++) {
+            for (let j = 0; j < assetsData.length; j++) {
+                const assetI = assetsData[i];
+                const assetJ = assetsData[j];
+
+                // Calculate covariance between asset i and j
+                const cov = calculateCovariance(assetI.returns, assetJ.returns);
+
+                // Add to total variance: w_i * w_j * cov(i, j)
+                // Here we use absolute exposure for risk calculation
+                portfolioVariance += assetI.marketValue * assetJ.marketValue * cov;
+            }
+        }
+
+        // Annualize the variance and calculate VaR
+        totalRisk = 1.65 * Math.sqrt(Math.abs(portfolioVariance) * 252);
+    } else {
+        // Fallback for CVaR or single asset (Assume independence/Sum)
+        totalRisk = assetsData.reduce((sum, item) => sum + item.risk, 0);
+    }
+
+    // Calculate individual risks for the response
+    const assetRisks = assetsData.map(item => ({
+        assetId: item.assetId,
+        name: item.name,
+        risk: item.risk,
+        contributionPercentage: totalRisk > 0 ? (item.risk / assetsData.reduce((s, a) => s + a.risk, 0)) * (item.risk / totalRisk * 100) : 0
+    }));
+
+    // Adjust contribution to be relative to totalRisk
+    const sumIndividual = assetsData.reduce((s, a) => s + a.risk, 0);
+    const assetRisksAdjusted = assetsData.map(item => ({
+        assetId: item.assetId,
+        name: item.name,
+        risk: item.risk,
+        contributionPercentage: sumIndividual > 0 ? (item.risk / sumIndividual) * 100 : 0
     }));
 
     return {
         strategy,
         totalRisk,
-        assetRisks: assetsWithContribution,
+        diversificationBenefit: strategy === 'VAR' ? (sumIndividual - totalRisk) : 0,
+        assetRisks: assetRisksAdjusted,
         timestamp: new Date()
     };
 };

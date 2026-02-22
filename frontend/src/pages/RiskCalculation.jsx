@@ -90,10 +90,16 @@ const RiskCalculation = () => {
                                 <div style={{ fontSize: '2.5rem', fontWeight: 800 }}>
                                     ₹{riskData.totalRisk.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                                 </div>
-                                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                    at 95% confidence level (1-Year Horizon)
+                                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>at 95% confidence level (1-Year Horizon)</span>
+                                    {riskData.diversificationBenefit > 0 && (
+                                        <span style={{ color: 'var(--success)', fontWeight: 600 }}>
+                                            Diversification Benefit: ₹{riskData.diversificationBenefit.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
+
 
                             <h3>Asset Risk Contribution</h3>
                             <div className="card" style={{ marginTop: '1rem' }}>

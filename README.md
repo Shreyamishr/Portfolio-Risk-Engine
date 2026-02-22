@@ -2,12 +2,13 @@
 
 A full-stack application to manage financial assets and calculate portfolio risk using **Value at Risk (VaR)** and **Conditional Value at Risk (CVaR)**.
 
-## 🚀 Features
+##  Features
 
 - **Asset Management**: Support for STOCKS, OPTIONS, and FUTURES.
 - **Risk Engine**: Automated calculation of volatility and risk metrics.
-- **Dashboard**: Professional UI with real-time portfolio summary.
-- **Advanced Metrics**: Choose between Parametric VaR and Historical CVaR.
+- **Portfolio-Level Risk**: Advanced **Covariance Matrix** logic to account for asset correlations.
+- **Dashboard**: Professional UI with real-time portfolio summary and Diversification Benefit display.
+- **Advanced Metrics**: Choose between Correlated Parametric VaR and Historical CVaR.
 
 ## 🛠 Architecture
 
@@ -18,7 +19,7 @@ The application follows a clean separation of concerns:
 - **Database**: MongoDB (Mongoose) for persistent asset storage.
 - **Risk Service**: A dedicated service containerizes all financial logic, keeping the controllers lean.
 
-## 📊 Financial Formulas
+##  Financial Formulas
 
 ### 1. Volatility Calculation
 We use annualized daily return standard deviation:
@@ -39,24 +40,30 @@ Also known as Expected Shortfall, calculated using **Historical Simulation** and
 3.  Identify the worst 5% of returns.
 4.  **CVaR** = Average of those worst 5% returns $\times \sqrt{252} \times MarketValue$.
 
-## 📝 Assumptions & Limitations
+### 4. Portfolio VaR (Correlated Approach)
+Unlike simple summation, the engine uses a **Covariance Matrix** to model how assets move together:
+- **Formula**: $VaR_p = 1.65 \times \sqrt{V^T \Sigma V} \times \sqrt{252}$
+- Where $V$ is the vector of dollar exposures and $\Sigma$ is the covariance matrix of daily returns.
+- **Diversification Benefit**: The reduction in risk achieved by holding non-perfectly correlated assets.
 
-- **Independence (No Correlation)**: Assets are assumed to be independent. **Total Portfolio Risk = $\sum$ Asset Risks**. In real markets, assets often move together (correlation). Professional systems use a **Covariance Matrix** to account for this.
+##  Assumptions & Limitations
+
+- **Correlation Modeling**: Assets are **no longer assumed to be independent**. The engine calculates a full covariance matrix for VaR, correctly modeling diversification benefits. (Note: CVaR still uses asset-level summation for individual logic).
 - **Short Selling**: The engine handles negative quantities (shorting) by calculating risk based on total market exposure (absolute value).
 - **Time Horizon**: Risk metrics are calculated on a **1-year horizon** using the $\sqrt{252}$ scaling factor.
 - **Data Validation**: A minimum of 5 days of price history is required. Risk is calculated as 0 if data is insufficient.
 - **Option Greeks**: For Options, we calculate risk based on historical price volatility rather than Delta/Gamma greeks.
 - **Normal Distribution**: VaR assumes returns are normally distributed (Parametric approach).
 
-## 🔮 Future Improvements
+##  Future Improvements
 
-- [ ] **Covariance Matrix**: Incorporate asset correlations for more accurate portfolio-level risk.
+- [x] **Covariance Matrix**: Incorporate asset correlations for more accurate portfolio-level risk. (✅ COMPLETED)
 - [ ] **Monte Carlo Simulation**: implement stochastic modeling for risk forecasting.
 - [ ] **Real-time Data**: Integrate with Alpha Vantage or Yahoo Finance APIs for live pricing.
 - [ ] **Authentication**: Secure user portfolios with JWT-based auth.
 - [ ] **Dockerization**: Containerize services for easy deployment.
 
-## ⚙️ Setup
+##  Setup
 
 ### Backend
 1. `cd backend`
