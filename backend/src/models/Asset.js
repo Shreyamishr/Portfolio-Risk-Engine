@@ -27,16 +27,21 @@ const assetSchema = new mongoose.Schema({
   // Asset-specific fields
   strikePrice: {
     type: Number,
-    required: function() { return this.type === 'OPTION'; }
+    required: function () { return this.type === 'OPTION'; }
   },
   underlyingPrice: {
     type: Number,
-    required: function() { return this.type === 'OPTION'; }
+    required: function () { return this.type === 'OPTION'; }
   },
   leverage: {
     type: Number,
-    required: function() { return this.type === 'FUTURE'; },
+    required: function () { return this.type === 'FUTURE'; },
     default: 1
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'User',
   }
 }, { timestamps: true });
 

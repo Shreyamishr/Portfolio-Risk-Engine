@@ -4,7 +4,7 @@ const riskService = require('../services/riskService');
 exports.calculateRisk = async (req, res) => {
     try {
         const { strategy } = req.body;
-        const assets = await Asset.find();
+        const assets = await Asset.find({ user: req.user.id });
 
         if (!assets || assets.length === 0) {
             return res.status(400).json({ message: 'No assets found in portfolio' });

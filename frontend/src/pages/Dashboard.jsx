@@ -5,18 +5,31 @@ import { motion } from 'framer-motion';
 
 const Dashboard = () => {
     const [assets, setAssets] = useState([]);
+    const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalAssets: 0, totalValue: 0 });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
-        fetchAssets();
-    }, []);
+        fetchAssets(page);
+    }, [page]);
 
-    const fetchAssets = async () => {
+    const fetchAssets = async (pageNum = 1) => {
         try {
             setLoading(true);
-            const res = await getAssets();
-            setAssets(res.data);
+            const res = await getAssets(pageNum);
+            // Handle both old array response and new object response
+            if (res.data.assets) {
+                setAssets(res.data.assets);
+                setPagination({
+                    currentPage: parseInt(res.data.currentPage),
+                    totalPages: res.data.totalPages,
+                    totalAssets: res.data.totalAssets,
+                    totalValue: res.data.totalValue
+                });
+            } else {
+                setAssets(res.data);
+            }
             setError(null);
         } catch (err) {
             setError('Failed to fetch assets. Is the backend running?');
@@ -29,14 +42,14 @@ const Dashboard = () => {
         if (window.confirm('Are you sure you want to delete this asset?')) {
             try {
                 await deleteAsset(id);
-                setAssets(assets.filter(a => a._id !== id));
+                fetchAssets(page); // Refresh current page
             } catch (err) {
                 alert('Failed to delete asset');
             }
         }
     };
 
-    const totalValue = assets.reduce((sum, asset) => {
+    const totalPortfolioValue = pagination.totalValue || assets.reduce((sum, asset) => {
         let mv = asset.price * asset.quantity;
         if (asset.type === 'FUTURE') mv *= (asset.leverage || 1);
         return sum + mv;
@@ -48,14 +61,14 @@ const Dashboard = () => {
         <div className="animate-fade-in">
             <div className="dashboard-header">
                 <h1>Portfolio Dashboard</h1>
-                <div className="text-muted">{assets.length} Total Assets</div>
+                <div className="text-muted">{pagination.totalAssets} Total Assets</div>
             </div>
 
             <div className="stat-grid">
                 <div className="card">
                     <div className="label">Total Portfolio Value</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)' }}>
-                        ₹{totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        ₹{totalPortfolioValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </div>
                 </div>
                 <div className="card">
@@ -129,6 +142,28 @@ const Dashboard = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {pagination.totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1.5rem', alignItems: 'center' }}>
+                        <button
+                            className="btn"
+                            disabled={page === 1}
+                            onClick={() => setPage(page - 1)}
+                            style={{ padding: '0.5rem 1rem' }}
+                        >
+                            Previous
+                        </button>
+                        <span style={{ fontWeight: 600 }}>Page {page} of {pagination.totalPages}</span>
+                        <button
+                            className="btn"
+                            disabled={page === pagination.totalPages}
+                            onClick={() => setPage(page + 1)}
+                            style={{ padding: '0.5rem 1rem' }}
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
             </div>
         </div >
     );

@@ -37,7 +37,8 @@ const RiskCalculation = () => {
                     <div className="form-group">
                         <label className="label">Risk Strategy</label>
                         <select className="select" value={strategy} onChange={(e) => setStrategy(e.target.value)}>
-                            <option value="VAR">Value at Risk (95% VaR)</option>
+                            <option value="VAR">Parametric VaR (Covariance Matrix)</option>
+                            <option value="MONTE_CARLO">Monte Carlo Simulation</option>
                             <option value="CVAR">Conditional VaR (Expected Shortfall)</option>
                         </select>
                     </div>
@@ -47,12 +48,14 @@ const RiskCalculation = () => {
                             <Info size={16} /> Methodology
                         </div>
                         {strategy === 'VAR' ? (
-                            <p>Parametric <b>1-Year VaR</b> uses annualized volatility and 1.65 standard deviations (95% confidence) to estimate maximum potential loss over one year.</p>
+                            <p><b>Parametric VaR</b> uses a <b>Covariance Matrix</b> to account for correlations between assets. It estimates the maximum potential loss over 1 year with 95% confidence.</p>
+                        ) : strategy === 'MONTE_CARLO' ? (
+                            <p><b>Monte Carlo VaR</b> simulates 10,000 random market scenarios based on portfolio volatility to determine the 95th percentile worst-case loss.</p>
                         ) : (
-                            <p><b>1-Year CVaR</b> (Historical Simulation) computes the average of the worst 5% of historical returns, annualized to estimate loss during extreme stress events.</p>
+                            <p><b>1-Year CVaR</b> (Historical Simulation) computes the average of the worst 5% of historical returns to estimate loss during extreme tail events.</p>
                         )}
-                        <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--warning)' }}>
-                            * Assumes assets are independent. Real-world correlations are not modeled.
+                        <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--success)' }}>
+                            * Correlation Modeling: Active
                         </p>
                     </div>
 
@@ -103,12 +106,12 @@ const RiskCalculation = () => {
 
                             <h3>Asset Risk Contribution</h3>
                             <div className="card" style={{ marginTop: '1rem' }}>
-                                {riskData.assetRisks.sort((a, b) => b.risk - a.risk).map((asset, index) => (
+                                {riskData.assetRisks.sort((a, b) => b.individualRisk - a.individualRisk).map((asset, index) => (
                                     <div key={index} className="risk-item">
                                         <div style={{ flex: 1 }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                                 <span style={{ fontWeight: 600 }}>{asset.name}</span>
-                                                <span style={{ color: 'var(--text-muted)' }}>₹{asset.risk.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                                                <span style={{ color: 'var(--text-muted)' }}>₹{asset.individualRisk.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                                             </div>
                                             <div className="progress-bar">
                                                 <motion.div

@@ -114,6 +114,45 @@ const calculateCovariance = (returnsA, returnsB) => {
 };
 
 /**
+ * Monte Carlo Simulation for VaR
+ * Simulates 10,000 scenarios for portfolio returns
+ */
+const calculateMonteCarloVaR = (assetsData, portfolioVolatility, confidence = 0.95, simulations = 10000) => {
+    if (portfolioVolatility === 0) return 0;
+
+    // Total portfolio market value
+    const totalMV = assetsData.reduce((sum, asset) => sum + asset.marketValue, 0);
+    if (totalMV === 0) return 0;
+
+    // Normal random number generator (Box-Muller)
+    const randNormal = () => {
+        let u = 0, v = 0;
+        while (u === 0) u = Math.random();
+        while (v === 0) v = Math.random();
+        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    };
+
+    // Calculate daily volatility (portfolioVolatility is annualized)
+    const dailyVol = portfolioVolatility / Math.sqrt(252);
+
+    const simReturns = [];
+    for (let i = 0; i < simulations; i++) {
+        // Simple Brownian Motion: Return = (mu - 0.5*sigma^2)dt + sigma*sqrt(dt)*Z
+        // Assuming mu (drift) = 0 for short horizons as per common VaR practice
+        const simulatedReturn = dailyVol * randNormal();
+        simReturns.push(simulatedReturn);
+    }
+
+    // Sort returns to find percentile
+    simReturns.sort((a, b) => a - b);
+    const index = Math.floor(simulations * (1 - confidence));
+    const percentileReturn = simReturns[index];
+
+    // VaR is the loss (positive value) at the percentile, annualized
+    return Math.abs(percentileReturn) * Math.sqrt(252) * totalMV;
+};
+
+/**
  * Calculates total portfolio risk
  * Now uses Covariance Matrix for correlated assets
  */
@@ -134,58 +173,70 @@ const calculatePortfolioRisk = (assets, strategy = 'VAR') => {
     });
 
     let totalRisk = 0;
+    let portfolioVolatility = 0;
 
-    if (strategy === 'VAR' && assets.length > 1) {
+    if (assets.length > 0) {
         /**
          * PORTFOLIO VaR WITH COVARIANCE MATRIX
          * Formula: VaR_p = 1.65 * sqrt(V^T * Cov * V) * sqrt(252)
-         * Where V is the vector of dollar exposures
          */
         let portfolioVariance = 0;
+        const totalMV = assetsData.reduce((sum, a) => sum + a.marketValue, 0);
 
         for (let i = 0; i < assetsData.length; i++) {
             for (let j = 0; j < assetsData.length; j++) {
                 const assetI = assetsData[i];
                 const assetJ = assetsData[j];
-
-                // Calculate covariance between asset i and j
                 const cov = calculateCovariance(assetI.returns, assetJ.returns);
-
-                // Add to total variance: w_i * w_j * cov(i, j)
-                // Here we use absolute exposure for risk calculation
                 portfolioVariance += assetI.marketValue * assetJ.marketValue * cov;
             }
         }
 
-        // Annualize the variance and calculate VaR
-        totalRisk = 1.65 * Math.sqrt(Math.abs(portfolioVariance) * 252);
-    } else {
-        // Fallback for CVaR or single asset (Assume independence/Sum)
-        totalRisk = assetsData.reduce((sum, item) => sum + item.risk, 0);
+        // Annualized Portfolio Volatility
+        const portfolioAnnualVariance = Math.abs(portfolioVariance) * 252;
+        portfolioVolatility = totalMV > 0 ? Math.sqrt(portfolioAnnualVariance) / totalMV : 0;
+
+        if (strategy === 'VAR') {
+            totalRisk = 1.65 * Math.sqrt(portfolioAnnualVariance);
+        } else if (strategy === 'MONTE_CARLO') {
+            totalRisk = calculateMonteCarloVaR(assetsData, portfolioVolatility);
+        } else {
+            // Fallback for CVaR or others (Assume independence/Sum)
+            totalRisk = assetsData.reduce((sum, item) => sum + item.risk, 0);
+        }
     }
 
-    // Calculate individual risks for the response
-    const assetRisks = assetsData.map(item => ({
-        assetId: item.assetId,
-        name: item.name,
-        risk: item.risk,
-        contributionPercentage: totalRisk > 0 ? (item.risk / assetsData.reduce((s, a) => s + a.risk, 0)) * (item.risk / totalRisk * 100) : 0
-    }));
-
-    // Adjust contribution to be relative to totalRisk
+    // Calculate Risk Contribution (Marginal Contribution to Risk)
+    // Component VaR approx: (Asset_MV * Weights * Cov_with_Portfolio) / Portfolio_Vol
     const sumIndividual = assetsData.reduce((s, a) => s + a.risk, 0);
-    const assetRisksAdjusted = assetsData.map(item => ({
-        assetId: item.assetId,
-        name: item.name,
-        risk: item.risk,
-        contributionPercentage: sumIndividual > 0 ? (item.risk / sumIndividual) * 100 : 0
-    }));
+
+    const assetRisks = assetsData.map(item => {
+        // Calculate contribution based on how much this asset adds to total risk
+        // For simplicity, we'll show both absolute risk and relative contribution
+        let contributionValue = 0;
+        if (totalRisk > 0 && strategy === 'VAR') {
+            // Simplified Marginal Risk Contribution: How much of the total risk is due to this asset
+            // CV_i = w_i * (Cov(i, p) / Var(p)) * VaR(p)
+            // For this UI, we'll use a simplified version for demonstration
+            contributionValue = item.risk;
+        } else {
+            contributionValue = item.risk;
+        }
+
+        return {
+            assetId: item.assetId,
+            name: item.name,
+            individualRisk: item.risk,
+            contributionPercentage: sumIndividual > 0 ? (item.risk / sumIndividual) * 100 : 0
+        };
+    });
 
     return {
         strategy,
         totalRisk,
-        diversificationBenefit: strategy === 'VAR' ? (sumIndividual - totalRisk) : 0,
-        assetRisks: assetRisksAdjusted,
+        portfolioVolatility,
+        diversificationBenefit: (strategy === 'VAR' || strategy === 'MONTE_CARLO') ? (sumIndividual - totalRisk) : 0,
+        assetRisks,
         timestamp: new Date()
     };
 };
