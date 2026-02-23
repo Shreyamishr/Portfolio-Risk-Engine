@@ -1,82 +1,95 @@
-# Portfolio Risk Management Engine
+# 🛡️ RiskVision: Advanced Portfolio Risk Engine
 
-A full-stack application to manage financial assets and calculate portfolio risk using **Value at Risk (VaR)** and **Conditional Value at Risk (CVaR)**.
+RiskVision is a professional-grade, full-stack **Portfolio Risk Management System** designed to help investors quantify and visualize market exposure. It goes beyond simple tracking by implementing industrial financial risk models used by hedge funds and retail banks.
 
-##  Features
+---
 
-- **Asset Management**: Support for STOCKS, OPTIONS, and FUTURES.
-- **Risk Engine**: Automated calculation of volatility and risk metrics.
-- **Portfolio-Level Risk**: Advanced **Covariance Matrix** logic to account for asset correlations.
-- **Dashboard**: Professional UI with real-time portfolio summary and Diversification Benefit display.
-- **Advanced Metrics**: Choose between Correlated Parametric VaR and Historical CVaR.
+##  Key Features
 
-## 🛠 Architecture
+###  1. Secure Authentication
+- **JWT-Based Security**: Robust authentication using JSON Web Tokens.
+- **User-Specific Portfolios**: Each user manages their own isolated asset collection.
+- **Secure Storage**: Password hashing using `bcryptjs`.
 
-The application follows a clean separation of concerns:
+###  2. Comprehensive Asset Management
+- **Multi-Asset Support**: Handle STOCKS, OPTIONS, and FUTURES.
+- **Smart Filtering**: Server-side searching and pagination for high-performance data handling.
+- **Exposure Tracking**: Automatic calculation of Market Value, accounting for quantities, prices, and leverage (for futures).
 
-- **Frontend**: React.js with Functional Components and Hooks. Styled with Premium Vanilla CSS and Framer Motion for animations.
-- **Backend**: Node.js & Express. Logic is modularized into Controllers, Services, and Routes.
-- **Database**: MongoDB (Mongoose) for persistent asset storage.
-- **Risk Service**: A dedicated service containerizes all financial logic, keeping the controllers lean.
+###  3. Advanced Risk Engine (The Core)
+- **VaR (Value at Risk)**: Parametric approach using **Covariance Matrices** to model cross-asset correlations (Diversification Benefit).
+- **Monte Carlo Simulation**: 10,000 simulations using Geometric Brownian Motion to forecast potential losses.
+- **CVaR (Expected Shortfall)**: Historical simulation to capture fat-tail events (Black Swan protection).
+- **Risk Contribution**: Detailed breakdown of how much each asset adds to the total portfolio risk.
 
-##  Financial Formulas
+###  4. Premium Dashboard
+- **Rich Aesthetics**: Dark-themed, glassmorphic UI built with Vanilla CSS.
+- **Dynamic Animations**: Smooth transitions using **Framer Motion**.
+- **Interactive Visuals**: Real-time progress bars showing risk contribution percentages.
 
-### 1. Volatility Calculation
-We use annualized daily return standard deviation:
-1.  **Daily Returns ($R_t$)**: $R_t = \frac{P_t - P_{t-1}}{P_{t-1}}$
-2.  **Standard Deviation ($\sigma$)**: calculated over the return series.
-3.  **Annualized Volatility**: $\sigma_{annual} = \sigma_{daily} \times \sqrt{252}$
+---
 
-### 2. Value at Risk (VaR 95%) - 1 Year Horizon
-Estimated maximum potential loss over a **1-year time horizon** with 95% confidence:
-$VaR = 1.65 \times \sigma_{annual} \times MarketValue$
+##  Tech Stack
 
-*Note: For Futures, Market Value is adjusted by leverage. For short positions, absolute exposure is used.*
+- **Frontend**: React.js 18, Vite, Framer Motion, Lucide React, Axios.
+- **Backend**: Node.js, Express.js, JWT (Authentication), Bcrypt (Security).
+- **Database**: MongoDB (Mongoose ODM).
+- **Testing**: Jest & Supertest (Unit & Integration testing).
 
-### 3. Conditional Value at Risk (CVaR) - 1 Year Horizon
-Also known as Expected Shortfall, calculated using **Historical Simulation** and annualized for horizon consistency:
-1.  Compute all historical daily returns ($R_t$).
-2.  Sort returns in ascending order.
-3.  Identify the worst 5% of returns.
-4.  **CVaR** = Average of those worst 5% returns $\times \sqrt{252} \times MarketValue$.
+---
 
-### 4. Portfolio VaR (Correlated Approach)
-Unlike simple summation, the engine uses a **Covariance Matrix** to model how assets move together:
+##  Financial Methodology (Interview Preparation)
+
+### 1. Parametric VaR (95% Confidence)
+The engine calculates the **1-Year Value at Risk** using the Variance-Covariance method:
 - **Formula**: $VaR_p = 1.65 \times \sqrt{V^T \Sigma V} \times \sqrt{252}$
-- Where $V$ is the vector of dollar exposures and $\Sigma$ is the covariance matrix of daily returns.
-- **Diversification Benefit**: The reduction in risk achieved by holding non-perfectly correlated assets.
+- **Logic**: We calculate the daily volatility of each asset, build a covariance matrix ($\Sigma$), and multiply by the exposure vector ($V$). The result is annualized using the $\sqrt{252}$ factor.
 
-##  Assumptions & Limitations
+### 2. Monte Carlo Simulation
+- **Logic**: We generate 10,000 random market scenarios based on the portfolio's aggregated volatility.
+- **Calculation**: Each scenario represents a potential portfolio return. We take the 5th percentile (95% confidence) of these returns to determine the VaR. This provides a more robust estimate than parametric VaR when returns are non-normal.
 
-- **Correlation Modeling**: Assets are **no longer assumed to be independent**. The engine calculates a full covariance matrix for VaR, correctly modeling diversification benefits. (Note: CVaR still uses asset-level summation for individual logic).
-- **Short Selling**: The engine handles negative quantities (shorting) by calculating risk based on total market exposure (absolute value).
-- **Time Horizon**: Risk metrics are calculated on a **1-year horizon** using the $\sqrt{252}$ scaling factor.
-- **Data Validation**: A minimum of 5 days of price history is required. Risk is calculated as 0 if data is insufficient.
-- **Option Greeks**: For Options, we calculate risk based on historical price volatility rather than Delta/Gamma greeks.
-- **Normal Distribution**: VaR assumes returns are normally distributed (Parametric approach).
+### 3. Conditional VaR (CVaR)
+- **Logic**: While VaR tells you "how much can I lose?", CVaR tells you "if things go bad, what is the average loss?".
+- **Method**: Historical Simulation. We sort historical returns and average the worst 5%.
 
-##  Future Improvements
+---
 
-- [x] **Covariance Matrix**: Incorporate asset correlations for more accurate portfolio-level risk. (✅ COMPLETED)
-- [ ] **Monte Carlo Simulation**: implement stochastic modeling for risk forecasting.
-- [ ] **Real-time Data**: Integrate with Alpha Vantage or Yahoo Finance APIs for live pricing.
-- [ ] **Authentication**: Secure user portfolios with JWT-based auth.
-- [ ] **Dockerization**: Containerize services for easy deployment.
+##  Getting Started
 
-##  Setup
+### Prerequisites
+- Node.js (v16+)
+- MongoDB Atlas or Local MongoDB
 
-### Backend
+### Backend Setup
 1. `cd backend`
 2. `npm install`
-3. Create `.env` with `MONGODB_URI`
-4. `node seed.js` (To populate sample Reliance & Nifty data)
-5. `npm run dev`
+3. Configure `.env`:
+   ```env
+   PORT=5000
+   MONGODB_URI=your_mongodb_connection_string
+   JWT_SECRET=your_secret_key
+   ```
+4. `npm run dev`
 
-### Frontend
+### Frontend Setup
 1. `cd frontend`
 2. `npm install`
 3. `npm run dev`
 
+### Running Tests
+To verify the risk calculations and API security:
+```bash
+cd backend
+npm test
+```
+
 ---
-*Created for the Portfolio Risk Management Interview Assignment.*
+
+##  Documentation & Testing
+- **Unit Tests**: Coverage for Risk Calculation logic and Auth Middlewares.
+- **API Documentation**: RESTful endpoints for Auth (`/auth`), Assets (`/assets`), and Risk (`/risk`).
+
+---
+*Developed as a high-performance Financial Engineering project for Portfolio Risk Analysis.*
 
