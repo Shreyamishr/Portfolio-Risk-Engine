@@ -74,7 +74,7 @@ const AddAsset = () => {
                 <h1>Add New Asset</h1>
             </div>
 
-            <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <div className="card centered-card" style={{ maxWidth: '600px' }}>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label className="label">Asset Name</label>
@@ -88,7 +88,7 @@ const AddAsset = () => {
                         />
                     </div>
 
-                    <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div className="form-grid">
                         <div className="form-group">
                             <label className="label">Asset Type</label>
                             <select className="select" name="type" value={formData.type} onChange={handleChange}>
@@ -109,7 +109,7 @@ const AddAsset = () => {
                     </div>
 
                     {formData.type === 'OPTION' && (
-                        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                        <div className="form-grid">
                             <div className="form-group">
                                 <label className="label">Strike Price</label>
                                 <input className="input" type="number" name="strikePrice" step="0.01" required value={formData.strikePrice} onChange={handleChange} />

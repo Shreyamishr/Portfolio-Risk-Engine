@@ -111,6 +111,17 @@ body {
     box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
 }
 
+.btn-success {
+    background-color: var(--success);
+    color: white;
+}
+
+.btn-success:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+
 .btn-danger {
     background-color: transparent;
     border: 1px solid var(--danger);
@@ -245,6 +256,63 @@ td {
     border-radius: 4px;
 }
 
+/* Auth Pages */
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 160px);
+}
+
+.centered-card {
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Grid Layouts */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.risk-grid {
+    display: grid;
+    grid-template-columns: 1fr 2.5fr;
+    gap: 2rem;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-2 {
+    margin-top: 2rem;
+}
+
+.mb-2 {
+    margin-bottom: 2rem;
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+.text-success {
+    color: var(--success);
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.text-warning {
+    color: var(--warning);
+}
+
+
+
 /* Animations */
 @keyframes fadeIn {
     from {
@@ -260,4 +328,135 @@ td {
 
 .animate-fade-in {
     animation: fadeIn 0.5s ease forwards;
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+    .app-container {
+        padding: 1rem;
+    }
+
+    .mobile-menu-btn {
+        display: block !important;
+        background: none;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-main);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.4rem 0.8rem !important;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .mobile-menu-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem 0;
+    }
+
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        background: rgba(30, 41, 59, 0.98);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        z-index: 100;
+    }
+
+    .nav-links.open {
+        display: flex;
+    }
+
+    .nav-link {
+        width: 100%;
+        padding: 0.85rem;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+    }
+
+    .nav-link:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--primary);
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.75rem;
+    }
+
+    .form-grid,
+    .risk-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .auth-container {
+        align-items: flex-start;
+        padding-top: 2rem;
+        min-height: auto;
+    }
+
+    .card {
+        padding: 1.25rem;
+    }
+
+
+    .btn {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+        padding: 0.85rem;
+    }
+
+    .nav-links .btn,
+    .nav-links button.nav-link {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 0.85rem;
+    }
+
+    table th,
+    table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .risk-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .risk-item>div:last-child {
+        text-align: left !important;
+        margin-left: 0 !important;
+        font-size: 0.8rem;
+    }
+}
+
+
+@media (max-width: 480px) {
+    .logo {
+        font-size: 1.4rem;
+    }
+
+    .nav-link span {
+        display: inline;
+    }
 }

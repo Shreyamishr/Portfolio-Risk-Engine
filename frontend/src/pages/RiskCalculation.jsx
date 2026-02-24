@@ -29,7 +29,7 @@ const RiskCalculation = () => {
                 <div className="text-muted">Analyze your portfolio exposure</div>
             </div>
 
-            <div className="grid" style={{ gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+            <div className="risk-grid">
                 {/* Sidebar Controls */}
                 <div className="card">
                     <h3 style={{ marginBottom: '1.5rem' }}>Configuration</h3>
